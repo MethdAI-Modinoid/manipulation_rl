@@ -1,0 +1,38 @@
+All commands below are run from the REPO ROOT (g1_grasp_repo/).
+The scripts/ wrappers cd into mjlab/ for you, which is where logs/ lives.
+
+# 0. One-time setup on a fresh machine
+./scripts/setup.sh
+
+# 1. (Re)build the robot model — only after changing morphology
+./scripts/build_model.sh
+
+# 2. Look at the scene (static, instant)
+./scripts/view.sh view_scene
+
+# --- SAPG / rl_games path (the current one) ---
+
+# 3. Train
+./scripts/train.sh --num-envs 3072 --num-blocks 6 --max-iterations 20000 --run-name myrun
+
+# 4. Play / evaluate a checkpoint
+#    match --alpha to what the checkpoint was trained at
+./scripts/play.sh --checkpoint mjlab/logs/rlg/<run>/nn/<ckpt>.pth \
+    --num-envs 1 --steps 100000 --render --device cpu --alpha 0.0
+
+# --- older rsl_rl path ---
+
+# Train live (window on your screen)
+cd mjlab && uv run python -m simtoolreal_g1.train.train --num-envs 2048 --max-iterations 500 --view
+
+# Train fast, headless — for real long runs
+cd mjlab && uv run python -m simtoolreal_g1.train.train --num-envs 4096 --max-iterations 5000
+
+# Watch curves live (in another terminal, while training)
+tensorboard --logdir mjlab/logs/rsl_rl
+
+# Evaluate / watch a trained rsl_rl policy
+cd mjlab && uv run python -m simtoolreal_g1.deploy.run_policy \
+    --checkpoint logs/rsl_rl/simtoolreal_g1/<run>/model_500.pt --num-envs 64
+cd mjlab && uv run python -m simtoolreal_g1.deploy.run_policy \
+    --checkpoint logs/rsl_rl/simtoolreal_g1/<run>/model_500.pt --num-envs 1 --render

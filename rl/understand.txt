@@ -1,0 +1,54 @@
+  ┌─────────────────────────── ENTRY POINTS ───────────────────────────┐                                                                    
+  │   rlg/train.py   ── reads ──►  rlg/simtoolreal_sapg.yaml           │
+  │   (train)                       (SAPG/PPO hyperparams: lr, blocks…)│
+  │        │                                                           │
+  │   rlg/play.py                                                      │
+  │   (eval / render)                                                  │
+  └────────┬────────────────────────────────────────────────────────┬──┘
+           │ both go through                                         │
+           ▼                                                         │
+  ┌──────────────────────────────────────────────┐                  │
+  │  rlg/vecenv_adapter.py                         │                 │
+  │   • wraps env for the rl_games fork            │                 │
+  │   • save_env_cfg / load_env_cfg (env_cfg.pkl)  │◄── snapshot ─────┘
+  └───────────────┬──────────────────────────────┘
+                  │ builds
+                  ▼
+  ┌──────────────────────────────────────────────┐
+  │  task/multi_object_env.py  (MultiObjectEnv)    │   ← only if --multi-tool
+  │   splits envs across cube "topologies"         │     (we use single, so skipped)
+  └───────────────┬──────────────────────────────┘
+                  ▼
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  task/simtoolreal_env.py   ►  SimToolRealG1Env   (THE ENV)       ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  builds the scene from:                                          ║
+  ║    • robot_cfg.py ──loads──► inspire/g1_revo2_rl.xml             ║
+  ║           ▲ (generated offline by build_rl_model.py)             ║
+  ║    • task/objects/object_gen.py     → the cube                   ║
+  ║    • _get_table_spec (in this file) → the table                  ║
+  ║    • task/env_cfg.py (EnvCfg)       → ALL config/knobs           ║
+  ╚══════════════════════════════════════════════════════════════════╝
+                  │
+                  │  every env.step(action) runs, in order:
+                  ▼
+   ┌────────────────────────────────────────────────────────────────┐
+   │ 1. mdp/actions.py       apply_action_pipeline  (action→targets) │
+   │ 2. sim.step()  × decimation   (MuJoCo-Warp physics)             │
+   │ 3. mdp/observations.py  compute_intermediate_values            │
+   │        → obs + fingertip-PAD distances + contacts               │
+   │ 4. mdp/reset_utils.py   update_object_init_z (lift reference)   │
+   │ 5. mdp/rewards.py       compute_rewards  (8 terms)     │
+   │ 6. mdp/terminations.py  compute_terminations                   │
+   │        → success/done + frame_counter (drives ALPHA ramp)      │
+   └────────────────────────────────────────────────────────────────┘
+                  │  on reset:
+                  ▼
+   ┌────────────────────────────────────────────────────────────────┐
+   │    mdp/reset_utils.py   reset_env_state                         │
+   │      → applies ALPHA curriculum: start-pose lerp,               │
+   │        cube scatter + yaw, resets buffers                       │
+   └────────────────────────────────────────────────────────────────┘
+
+
+

@@ -1,0 +1,15 @@
+.venv/
+logs/
+wandb/
+artifacts/
+outputs/
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+*.mp4
+MUJOCO_LOG.TXT
+.DS_Store

@@ -1,0 +1,114 @@
+# SimToolReal-on-G1 rl_games SAPG config (Approach B).
+params:
+  seed: 42
+
+  algo:
+    name: a2c_continuous
+
+  model:
+    name: continuous_a2c_logstd
+
+  network:
+    name: actor_critic
+    separate: False
+    space:
+      continuous:
+        mu_activation: None
+        sigma_activation: None
+        mu_init:
+          name: default
+        sigma_init:
+          name: const_initializer
+          val: 0
+        fixed_sigma: coef_cond    # SAPG requires coef_cond (not 'fixed')
+    mlp:
+      units: [1024, 1024, 512, 512]
+      activation: elu
+      d2rl: False
+      initializer:
+        name: default
+      regularizer:
+        name: None
+    rnn:
+      name: lstm
+      units: 1024
+      layers: 1
+      before_mlp: True
+      layer_norm: True
+
+  load_checkpoint: False
+  load_path: ''
+
+  config:
+    name: 0_simtoolreal_g1_sapg
+    full_experiment_name: 0_simtoolreal_g1_sapg
+    env_name: mjlab_simtoolreal      # informational; env injected via set_vec_env
+    device: 'cuda:0'
+    device_name: 'cuda:0'
+    multi_gpu: False
+    ppo: True
+    mixed_precision: True
+    normalize_input: True
+    normalize_value: True
+    value_bootstrap: True
+    normalize_advantage: True
+    reward_shaper:
+      scale_value: 0.01              # applied by rl_games (env emits RAW reward)
+    num_actors: 8192                 # OVERRIDDEN by train.py (= num_envs)
+    gamma: 0.99
+    tau: 0.95
+    learning_rate: 1e-4
+    lr_schedule: adaptive
+    schedule_type: standard
+    kl_threshold: 0.016
+    score_to_win: 1000000
+    max_epochs: 5000                 # OVERRIDDEN by train.py
+    save_best_after: 100
+    save_frequency: 200
+    print_stats: True
+    grad_norm: 1.0
+    entropy_coef: 0.0
+    truncate_grads: True
+    e_clip: 0.1
+    minibatch_size: 32768            # OVERRIDDEN by train.py
+    mini_epochs: 2
+    critic_coef: 4.0
+    clip_value: True
+    horizon_length: 16
+    seq_length: 16
+    bounds_loss_coef: 0.0001
+
+    # Asymmetric central value (states dim > obs dim).
+    central_value_config:
+      minibatch_size: 32768          # OVERRIDDEN by train.py
+      mini_epochs: 2
+      learning_rate: 1e-4
+      kl_threshold: 0.016
+      clip_value: True
+      normalize_input: True
+      truncate_grads: True
+      network:
+        name: actor_critic
+        central_value: True
+        mlp:
+          units: [1024, 1024, 512, 512]
+          activation: elu
+          d2rl: False
+          initializer:
+            name: default
+          regularizer:
+            name: None
+
+    # === SAPG ===
+    use_others_experience: lf
+    off_policy_ratio: 1.0
+    expl_type: mixed_expl_learn_param
+    expl_reward_type: entropy
+    expl_reward_coef_embd_size: 32
+    expl_reward_coef_scale: 0.002
+    expl_coef_block_size: 4096       # OVERRIDDEN by train.py (= num_envs/num_blocks)
+
+    player:
+      deterministic: False
+      games_num: 100000
+      print_stats: False

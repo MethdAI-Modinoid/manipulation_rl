@@ -1,0 +1,28 @@
+# ── Section 1: package identity + what it needs ──
+[project]
+name = "simtoolreal_g1"          # the import name: `import simtoolreal_g1`
+version = "0.1.0"
+requires-python = ">=3.10,<3.14" # same Python range as mjlab
+dependencies = [
+    "mjlab",                      # the RL framework
+    "rl_games",                   # simtoolreal's PPO/SAPG library
+    "gym==0.23.1",                # rl_games + our vecenv_adapter import it; undeclared upstream
+    "omegaconf",                  # rl_games config handling; undeclared upstream
+]
+
+# ── Section 2: how to build the package ──
+# hatchling is a standard, simple build backend.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# tells hatchling which folder IS the package
+[tool.hatch.build.targets.wheel]
+packages = ["simtoolreal_g1"]
+
+# ── Section 3: where to find mjlab and rl_games ──
+# They aren't on PyPI — they live on your disk. `editable = true` means
+# changes to their source are picked up live without reinstalling.
+[tool.uv.sources]
+mjlab = { path = "../mjlab", editable = true }
+rl_games = { path = "../rl_games", editable = true }
