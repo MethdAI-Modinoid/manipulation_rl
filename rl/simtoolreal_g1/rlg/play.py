@@ -48,7 +48,7 @@ def _build_player(params: dict, vec_env):
 
     runner = Runner()
     runner.load(params)          # deepcopies params — must NOT contain the env
-    runner.set_vec_env(vec_env)  # inject after: the player reads env.num_envs
+    runner.set_vec_env(vec_env) 
     player = runner.create_player()
     player.has_batch_dimension = True  # we feed batched (N, obs) observations
     return player
